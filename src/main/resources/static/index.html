@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Network | Hierarchical layout</title>
+    <title>Logistic Network</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <style type="text/css">
         body {
@@ -15,9 +15,6 @@
             border: 1px solid lightgray;
         }
 
-        /*****************************************
-  upload button styles
-******************************************/
         .file-upload {
             position: relative;
             display: inline-block;
@@ -62,82 +59,19 @@
         }
     </style>
 
-    <script type="text/javascript" src="exampleUtil.js"></script>
+    <script type="text/javascript" src="util.js"></script>
     <script src="http://visjs.org/dist/vis.js"></script>
     <link href="http://visjs.org/dist/vis.css" rel="stylesheet" type="text/css"/>
 
-
-    <script type="text/javascript">
-        var network = null;
-
-        function destroy() {
-            if (network !== null) {
-                network.destroy();
-                network = null;
-            }
-        }
-
-        function test() {
-            var file = document.getElementById('input').files[0];
-
-            const fd = new FormData(), ajax = new XMLHttpRequest();
-
-            fd.append('file', file, file.name);
-
-            ajax.open('POST', '/upload');
-            ajax.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-            ajax.send(fd);
-
-            ajax.onreadystatechange = () => {
-                let text = ajax.responseText;
-                const response = JSON.parse(text);
-                var cities = response.cities;
-                var roads = response.roads;
-
-                destroy();
-
-                var data = func(cities, roads);
-
-                // create a network
-                var container = document.getElementById('mynetwork');
-
-                var options = {
-                    // width: 400 + 'px',
-                    // height: 300 + 'px',
-                    nodes: {
-                        shape: 'dot'
-                    },
-                    edges: {
-                        smooth: false
-                    },
-                    physics: false,
-                    interaction: {
-                        dragNodes: false,// do not allow dragging nodes
-                        zoomView: true, // do not allow zooming
-                        dragView: true  // do not allow dragging
-                    }
-                };
-
-                network = new vis.Network(container, data, options);
-
-                // add event listeners
-                network.on('select', function (params) {
-                    document.getElementById('selection').innerHTML = 'Selection: ' + params.nodes;
-                });
-            };
-        }
-
-    </script>
-
 </head>
 
-<body onload="draw();">
+<body>
 
 <div class="file-upload">
     <h2>Logistic Network Configuration</h2>
 
     <label for="input" class="file-upload__label">Upload File</label>
-    <input type="file" class="file-upload__input" id="input" onchange="test()" name="file-upload">
+    <input type="file" class="file-upload__input" id="input" onchange="drawNetwork()" name="file-upload">
 
 </div>
 

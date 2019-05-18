@@ -134,7 +134,7 @@ public class Test {
 ////        Map<String, List<Connection>> mappedConnections = transportationService.loadInitConnections(workbook);
 ////        transportationService.setInitPrices(workbook, mappedConnections);
 ////        transportationService.calc(mappedConnections, 10);
-////        transportationService.test(workbook);
+////        transportationService.drawNetwork(workbook);
 //    }
 //
 //
@@ -158,7 +158,7 @@ public class Test {
 //
 //
 //
-//    private void test(Workbook workbook) {
+//    private void drawNetwork(Workbook workbook) {
 //        Sheet distance = workbook.getSheet("Distance");
 //        List<String> cities = new ArrayList<>();
 //        distance.forEach(row -> {
