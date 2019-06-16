@@ -13,6 +13,9 @@ function drawNetwork() {
     const fd = new FormData(), ajax = new XMLHttpRequest();
 
     fd.append('file', file, file.name);
+    var regionalWhAmount = document.getElementById('regionalWhAmount').value;
+    console.log(regionalWhAmount);
+    fd.append('regionalWhAmount', regionalWhAmount);
 
     ajax.open('POST', '/upload');
     ajax.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
@@ -22,7 +25,7 @@ function drawNetwork() {
         let text = ajax.responseText;
         const response = JSON.parse(text);
         destroy();
-        var data = buildNetwork(response.cities, response.roads);
+        var data = buildNetwork(response.citiesRoadsDto.cities, response.citiesRoadsDto.roads);
 
         // create a network
         var container = document.getElementById('mynetwork');

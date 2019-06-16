@@ -14,7 +14,7 @@ import java.util.List;
 @Table(name = "connection")
 @Getter
 @Setter
-@ToString
+@ToString(of = "name")
 public class Connection {
 
     @Id

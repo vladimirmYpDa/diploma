@@ -1,6 +1,7 @@
 package com.diploma.app.controller;
 
 import com.diploma.app.model.CitiesRoadsDto;
+import com.diploma.app.model.ResultDto;
 import com.diploma.app.service.TransportationServiceImpl;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +23,9 @@ public class MainController {
 
     @RequestMapping("upload")
     @ResponseBody
-    public ResponseEntity<CitiesRoadsDto> upload(@RequestParam("file") MultipartFile file) throws IOException, InvalidFormatException {
-        CitiesRoadsDto citiesRoadsDto = transportationService.process(file.getInputStream());
-        return new ResponseEntity<CitiesRoadsDto>(citiesRoadsDto, HttpStatus.OK);
+    public ResponseEntity<ResultDto> upload(@RequestParam("file") MultipartFile file,
+                                                 @RequestParam("regionalWhAmount") Integer regionalWhAmount) throws IOException, InvalidFormatException {
+        ResultDto resultDto = transportationService.process(file.getInputStream(), regionalWhAmount);
+        return new ResponseEntity<>(resultDto, HttpStatus.OK);
     }
 }
