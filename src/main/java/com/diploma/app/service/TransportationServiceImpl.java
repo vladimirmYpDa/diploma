@@ -2,7 +2,6 @@ package com.diploma.app.service;
 
 import com.diploma.app.model.*;
 import com.diploma.app.repository.ConnectionRepository;
-import com.diploma.app.repository.NodeRepository;
 import com.diploma.app.repository.RoadRepository;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
@@ -32,15 +31,13 @@ public class TransportationServiceImpl {
 
     private final RoadRepository roadRepository;
     private final ConnectionRepository connectionRepository;
-    private final NodeRepository nodeRepository;
 
     private static final BigDecimal TRANSPORT_PRICE = BigDecimal.valueOf(0.678);
 
     @Autowired
-    public TransportationServiceImpl(RoadRepository roadRepository, ConnectionRepository connectionRepository, NodeRepository nodeRepository) {
+    public TransportationServiceImpl(RoadRepository roadRepository, ConnectionRepository connectionRepository) {
         this.roadRepository = roadRepository;
         this.connectionRepository = connectionRepository;
-        this.nodeRepository = nodeRepository;
     }
 
     public ResultDto process(InputStream inputStream, Integer regionalWhAmount) throws IOException, InvalidFormatException {
@@ -66,9 +63,9 @@ public class TransportationServiceImpl {
                 nationalToSupplierClosestConnections, (HashMap<String, List<Connection>>) localToRegionalConnections,
                 ofNullable(regionalWhAmount).orElse(regionalToNationalClosestConnections.size()));
 
+        saveDistanceMapToFile(localToRegionalCheapestConnections,
+                regionalToNationalClosestConnections, nationalToSupplierClosestConnections, workbook);
         return resultDto;
-//        transportationService.saveSolutionToFile(localToRegionalCheapestConnections,
-//                regionalToNationalClosestConnections, nationalToSupplierClosestConnections, workbook);
     }
 
 
@@ -85,10 +82,6 @@ public class TransportationServiceImpl {
         List<Road> result;
         Map<String, Connection> localRegional = localToRegionalCheapestConnections;
 
-        Map<String, BigDecimal> regionalToDistanceMap = regionalToNationalClosestConnections.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getDistance()
-                        .add(nationalToSupplierClosestConnections.get(entry.getValue().getSourceNode().getName()).getDistance())));
-
         if (regionalWhAmount > 0) {
             Set<String> regionalWhs = regionalToNationalClosestConnections.keySet();
             int regionalCitiesExcluded = regionalToNationalClosestConnections.size() - regionalWhAmount;
@@ -99,6 +92,9 @@ public class TransportationServiceImpl {
 
             Map<List<String>, BigDecimal> minDemandSums = new HashMap<>();
 
+            Map<String, BigDecimal> regionalToDistanceMap = regionalToNationalClosestConnections.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getDistance()
+                            .add(nationalToSupplierClosestConnections.get(entry.getValue().getSourceNode().getName()).getDistance())));
 
             excludedRegionalCities.forEach(cities -> {
                 Map<String, List<Connection>> temp = localToRegionalConnections.entrySet().stream()
@@ -128,14 +124,16 @@ public class TransportationServiceImpl {
         }
 
         ResultDto resultDto = new ResultDto();
-        Map<String, List<Connection>> regionalToLocal = localRegional.entrySet().stream().map(Map.Entry::getValue).collect(Collectors.groupingBy(entry -> entry.getSourceNode().getName()));
+        Map<String, List<Connection>> regionalToLocal = localRegional.values().stream().collect(Collectors.groupingBy(entry -> entry.getSourceNode().getName()));
 
+        regionalToLocal.forEach((key, value) -> {
+            BigDecimal priceSumForRegional = value.stream().map(this::calcConnectionPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
+            System.out.println("Price sum for regional city " + key + " = " + priceSumForRegional);
+        });
         List<RegionalToLocalDto> regionalToLocalDtos = regionalToLocal.entrySet().stream()
                 .map(entry -> new RegionalToLocalDto(entry.getKey(), entry.getValue().stream().map(Connection::getDestinationNode)
                         .map(Node::getName).collect(Collectors.toList()))).collect(Collectors.toList());
-
         resultDto.setRegionalToLocalDtos(regionalToLocalDtos);
-        System.out.println(regionalToLocalDtos);
 
         BigDecimal sumConnection = result.stream().map(this::getSumConn).reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
         BigDecimal sumToRegionalConnection = result.stream().map(this::getSumToRegionalConn).reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
@@ -186,6 +184,10 @@ public class TransportationServiceImpl {
 
     private BigDecimal getSumToRegionalConn(Road road) {
         Connection localToRegionalConn = road.getLocalToRegionalConn();
+        return calcConnectionPrice(localToRegionalConn);
+    }
+
+    private BigDecimal calcConnectionPrice(Connection localToRegionalConn) {
         return localToRegionalConn.getDestinationNode().getDemand().multiply(localToRegionalConn.getDistance()).multiply(TRANSPORT_PRICE);
     }
 
@@ -228,11 +230,9 @@ public class TransportationServiceImpl {
         Map<String, Connection> resultMap = new HashMap<>();
 
         mappedConnections.forEach((k, v) -> {
-            List<BigDecimal> demands = v.stream().map(con -> con.getDestinationNode().getDemand()
-                    .multiply(con.getDistance()).multiply(TRANSPORT_PRICE)).collect(Collectors.toList());
+            List<BigDecimal> demands = v.stream().map(this::calcConnectionPrice).collect(Collectors.toList());
             BigDecimal minDemand = demands.stream().min(Comparator.naturalOrder()).orElse(null);
-            Connection minConnection = v.stream().filter(con -> con.getDestinationNode().getDemand()
-                    .multiply(con.getDistance()).multiply(TRANSPORT_PRICE).compareTo(minDemand) == 0).findFirst().orElse(null);
+            Connection minConnection = v.stream().filter(con -> calcConnectionPrice(con).compareTo(minDemand) == 0).findFirst().orElse(null);
             resultMap.put(k, minConnection);
         });
         return resultMap;
@@ -241,6 +241,7 @@ public class TransportationServiceImpl {
     private List<Road> createRoads(Map<String, Connection> localToRegionalCheapestConnections,
                                    Map<String, Connection> regionalToNationalClosestConnections,
                                    Map<String, Connection> nationalToSupplierClosestConnections) {
+
         return localToRegionalCheapestConnections.entrySet().stream().map(entry -> {
             Connection localToRegionalConn = entry.getValue();
             Node localSourceNode = localToRegionalConn.getSourceNode();
@@ -269,13 +270,6 @@ public class TransportationServiceImpl {
         System.out.println("Stored successfully!");
     }
 
-    private void saveIfNotPresent(Node node) {
-        Node byName = nodeRepository.getByName(node.getName());
-        if (!ofNullable(byName).isPresent()) {
-            nodeRepository.save(node);
-        }
-    }
-
     private void printSolution(Map<String, Connection> localToRegionalCheapestConnections,
                                Map<String, Connection> regionalToNationalClosestConnections,
                                Map<String, Connection> nationalToSupplierClosestConnections) {
@@ -293,16 +287,14 @@ public class TransportationServiceImpl {
             System.out.println(supplierName + " " + nationalToSupplierDistance + " km -> "
                     + nationalName + " " + regionalToNationalDistance + " km -> "
                     + regionalName + " " + localToRegionalDistance + " km -> "
-                    + localName + "| Total distance is " + totalDistance);
-
-            System.out.println();
+                    + localName + "| Total distance is " + totalDistance + "\n");
         });
     }
 
-    private void saveSolutionToFile(Map<String, Connection> localToRegionalCheapestConnections,
-                                    Map<String, Connection> regionalToNationalClosestConnections,
-                                    Map<String, Connection> nationalToSupplierClosestConnections,
-                                    Workbook workbook) {
+    private void saveDistanceMapToFile(Map<String, Connection> localToRegionalCheapestConnections,
+                                       Map<String, Connection> regionalToNationalClosestConnections,
+                                       Map<String, Connection> nationalToSupplierClosestConnections,
+                                       Workbook workbook) {
         makeSheet(localToRegionalCheapestConnections, workbook, "RegionalLocalSolution");
         Sheet nationalRegionalSheet = makeSheet(regionalToNationalClosestConnections, workbook, "NationalRegionalSolution");
         AtomicInteger natIndex = new AtomicInteger(1);
@@ -386,7 +378,7 @@ public class TransportationServiceImpl {
         return null;
     }
 
-    private Map<String, List<Connection>> loadInitConnections(Workbook workbook, String sheetName) throws IOException, InvalidFormatException {
+    private Map<String, List<Connection>> loadInitConnections(Workbook workbook, String sheetName) {
         Sheet distanceSheet = workbook.getSheet(sheetName);
         List<Connection> connections = new ArrayList<>();
         Row headerRow = distanceSheet.getRow(0);
