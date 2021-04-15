@@ -1,0 +1,29 @@
+{% extends "base" %}
+
+{% block head %}
+    {{ parent() }}
+    <link href="../../static/css/admin.css" rel="stylesheet" type="text/css"/>
+{% endblock %}
+
+{% block title %}
+    {{ pageTitle }} | {{ parent() }}
+{% endblock %}
+
+{% block header %}
+    {% include "../elements/headerAdmin.html" %}
+{% endblock %}
+
+{% block wrapper %}
+    <div id="pageTitle">
+        <h4>{{ pageTitle }}</h4>
+    </div>
+
+    <div id="alert">
+        {% block alert %} {% endblock %}
+    </div>
+
+    <div id="content">
+        {% block content %} {% endblock %}
+    </div>
+{% endblock %}
+

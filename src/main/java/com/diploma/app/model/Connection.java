@@ -1,9 +1,6 @@
 package com.diploma.app.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 import javax.persistence.*;
 import javax.persistence.Table;
@@ -11,9 +8,14 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
-@Table(name = "connection")
+@Table(
+        name = "connection",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"source_node_id", "destination_node_id"})}
+)
 @Getter
 @Setter
+@NoArgsConstructor
 @ToString
 public class Connection {
 
@@ -36,5 +38,10 @@ public class Connection {
         this.sourceNode = sourceNode;
         this.destinationNode = destinationNode;
         this.distance = distance;
+    }
+
+    public Connection(Node sourceNode, Node destinationNode) {
+        this.sourceNode = sourceNode;
+        this.destinationNode = destinationNode;
     }
 }

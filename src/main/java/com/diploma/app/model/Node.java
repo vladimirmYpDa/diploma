@@ -7,7 +7,11 @@ import javax.persistence.Table;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "node")
+@Table(
+        name = "node",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"name", "node_type"})}
+)
 @Getter
 @Setter
 @ToString
@@ -25,7 +29,18 @@ public class Node {
     @Column(name = "demand")
     private BigDecimal demand;
 
+    @Column(name = "node_type")
+    @Enumerated(EnumType.STRING)
+    private NodeType nodeType;
+
     public Node(String name) {
         this.name = name;
     }
+
+    public Node(String name, NodeType nodeType)
+    {
+        this.name = name;
+        this.nodeType = nodeType;
+    }
 }
+

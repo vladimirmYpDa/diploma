@@ -1,36 +1,49 @@
 var network = null;
 
-function destroy() {
+function destroyNetwork() {
     if (network !== null) {
         network.destroy();
         network = null;
     }
 }
 
-function drawNetwork() {
-    var file = document.getElementById('input').files[0];
+function upload() {
+    var file = document.getElementById('fileInput').files[0];
 
     const fd = new FormData(), ajax = new XMLHttpRequest();
 
     fd.append('file', file, file.name);
-    var regionalWhAmount = document.getElementById('regionalWhAmount').value;
-    console.log(regionalWhAmount);
-    fd.append('regionalWhAmount', regionalWhAmount);
 
     ajax.open('POST', '/upload');
     ajax.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-    ajax.send(fd);
 
     ajax.onreadystatechange = () => {
+        let text = "Upload status: " + ajax.status;
+        console.log(text);
+    };
+
+    ajax.send(fd);
+}
+
+function drawNetwork() {
+    const ajax = new XMLHttpRequest();
+    var regionalWhAmount = document.getElementById('regionalWhAmount').value;
+    ajax.open('GET', '/getResult?regionalWhAmount=' + regionalWhAmount);
+    ajax.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+    ajax.addEventListener("readystatechange", () => {
         let text = ajax.responseText;
         const response = JSON.parse(text);
-        destroy();
+        destroyNetwork();
         var data = buildNetwork(response.citiesRoadsDto.cities, response.citiesRoadsDto.roads);
 
-        // create a network
         var container = document.getElementById('mynetwork');
+        var parentRect = container.parentNode.getBoundingClientRect();
 
         var options = {
+            autoResize: false,
+            // width: parentRect.width + "px",
+            // height: parentRect.height + "px"
             nodes: {
                 shape: 'dot'
             },
@@ -39,19 +52,29 @@ function drawNetwork() {
             },
             physics: false,
             interaction: {
-                dragNodes: false,// do not allow dragging nodes
-                zoomView: true, // do not allow zooming
-                dragView: true  // do not allow dragging
+                dragNodes: false,
+                zoomView: true,
+                dragView: true
             }
         };
 
         network = new vis.Network(container, data, options);
 
-        // add event listeners
-        network.on('select', function (params) {
-            document.getElementById('selection').innerHTML = 'Selection: ' + params.nodes;
+        // // add event listeners
+        // network.on('select', function (params) {
+        //     document.getElementById('selection').innerHTML = 'Selection: ' + params.nodes;
+        // });
+
+        // ensure
+        window.addEventListener('resize', function(event) {
+            network.setOptions({
+                width: parentRect.width + "px",
+                height: parentRect.height + "px"
+            })
         });
-    };
+    });
+
+    ajax.send();
 }
 
 function buildNetwork(cities, roads) {
@@ -69,7 +92,7 @@ function buildNetwork(cities, roads) {
     for (var city in cities) {
         var type = cities[city];
 
-        if (type === 'Sup') {
+        if (type === 'SUPPLIER') {
             nodes.add({
                 id: i,
                 label: String(city),
@@ -78,7 +101,7 @@ function buildNetwork(cities, roads) {
             });
             suppCount++;
         }
-        if (type === 'Nat') {
+        if (type === 'NATIONAL') {
             nodes.add({
                 id: i,
                 label: String(city),
@@ -87,7 +110,7 @@ function buildNetwork(cities, roads) {
             });
             natCount++;
         }
-        if (type === 'Reg') {
+        if (type === 'REGIONAL') {
             nodes.add({
                 id: i,
                 label: String(city),
@@ -96,7 +119,7 @@ function buildNetwork(cities, roads) {
             });
             regCount++;
         }
-        if (type === 'Loc') {
+        if (type === 'LOCAL') {
             nodes.add({
                 id: i,
                 label: String(city),
