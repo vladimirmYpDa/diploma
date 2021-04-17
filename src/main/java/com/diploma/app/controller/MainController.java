@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Optional;
 
 @Controller
 public class MainController {
@@ -21,10 +22,9 @@ public class MainController {
     @Autowired
     private TransportationServiceImpl transportationService;
 
-    @RequestMapping("upload")
+    @RequestMapping(value = "upload", method = RequestMethod.POST)
     public ResponseEntity<Void> upload(
             @RequestParam("file") MultipartFile file)
-            throws IOException, InvalidFormatException
     {
         HttpStatus status = HttpStatus.OK;
 
@@ -40,14 +40,8 @@ public class MainController {
     @RequestMapping(value = "getResult", method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<ResultDto> getResult(
-            @RequestParam("regionalWhAmount") Integer regionalWhAmount)
-            throws IOException, InvalidFormatException
-    {
-        return new ResponseEntity<>(transportationService.calculateResult(regionalWhAmount), HttpStatus.OK);
-    }
-
-    @RequestMapping("/kek")
-    public String index() {
-        return "index";
+            @RequestParam("regionalWhAmount") Optional<Integer> regionalWhAmount)
+            throws IOException, InvalidFormatException {
+        return new ResponseEntity<>(transportationService.calculateResult(regionalWhAmount.orElse(0)), HttpStatus.OK);
     }
 }
