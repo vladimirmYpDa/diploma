@@ -14,5 +14,16 @@
 {% endblock %}
 
 {% block wrapper %}
+    {% include "elements/sidebar" %}
     <div id="mynetwork" class="content" data-swipe-ignore="true"></div>
+{% endblock %}
+
+{% block tail %}
+    {{ parent() }}
+
+    <script type="text/javascript">
+        document.getElementById("sidebarCollapse").addEventListener("click", function () {
+            document.getElementById("sidebar").classList.toggle("active");
+        });
+    </script>
 {% endblock %}

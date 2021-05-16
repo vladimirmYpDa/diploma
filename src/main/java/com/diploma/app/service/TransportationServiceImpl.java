@@ -10,7 +10,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,12 +25,12 @@ import static java.util.Optional.ofNullable;
 @Service
 public class TransportationServiceImpl {
 
-
     private final RoadRepository roadRepository;
     private final ConnectionRepository connectionRepository;
     private final NodeRepository nodeRepository;
 
     private static final BigDecimal TRANSPORT_PRICE = BigDecimal.valueOf(0.678);
+    private static int fileNumber = 0;
 
     @Autowired
     public TransportationServiceImpl(
@@ -62,8 +61,12 @@ public class TransportationServiceImpl {
                 nationalToSupplierClosestConnections, (HashMap<String, List<Connection>>) regionalToLocal,
                 ofNullable(regionalWhAmount).orElse(regionalToNationalClosestConnections.size()));
 
+        String fileName = String.format("download/matrix%d.xlsx", fileNumber++);
+        
         saveDistanceMapToFile(localToRegionalCheapestConnections,
-                regionalToNationalClosestConnections, nationalToSupplierClosestConnections, "Output.xlsx");
+                regionalToNationalClosestConnections, nationalToSupplierClosestConnections, fileName);
+
+        resultDto.setDownloadFilename(fileName);
 
         return resultDto;
     }
@@ -148,6 +151,7 @@ public class TransportationServiceImpl {
             BigDecimal priceSumForRegional = value.stream().map(this::calcConnectionPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
             System.out.println("Price sum for regional city " + key + " = " + priceSumForRegional);
         });
+
         List<RegionalToLocalDto> regionalToLocalDtos = regionalToLocal.entrySet().stream()
                 .map(entry -> new RegionalToLocalDto(entry.getKey(), entry.getValue().stream().map(Connection::getDestinationNode)
                         .map(Node::getName).collect(Collectors.toList()))).collect(Collectors.toList());
@@ -162,11 +166,14 @@ public class TransportationServiceImpl {
         resultDto.setSumToNationalConnection(sumToNationalConnection);
 
         List<List<String>> roadMatrix = result.stream().map(road -> {
-            Connection regionalToNationalConn = road.getRegionalToNationalConn();
-            System.out.println(road.getNationalToSupplierConn().getSourceNode() + " -> " + regionalToNationalConn.getSourceNode()
-                    + " -> " + regionalToNationalConn.getDestinationNode() + " -> " + road.getLocalToRegionalConn().getDestinationNode());
-            return Arrays.asList(road.getNationalToSupplierConn().getSourceNode().getName(), regionalToNationalConn.getSourceNode().getName(),
-                    regionalToNationalConn.getDestinationNode().getName(), road.getLocalToRegionalConn().getDestinationNode().getName());
+            Connection locToReg = road.getLocalToRegionalConn();
+            Connection regToNat = road.getRegionalToNationalConn();
+            Connection natToSup = road.getNationalToSupplierConn();
+
+            System.out.println(natToSup.getSourceNode() + " -> " + regToNat.getSourceNode()
+                    + " -> " + regToNat.getDestinationNode() + " -> " + locToReg.getDestinationNode());
+            return Arrays.asList(road.getNationalToSupplierConn().getSourceNode().getName(), regToNat.getSourceNode().getName(),
+                    regToNat.getDestinationNode().getName(), road.getLocalToRegionalConn().getDestinationNode().getName());
         }).collect(Collectors.toList());
 
         Map<String, String> citiesMap = new HashMap<>();
@@ -274,18 +281,6 @@ public class TransportationServiceImpl {
 
             return new Road(totalDistance, localToRegionalConn, regionalToNationalConn, nationalToSupplierConn);
         }).collect(Collectors.toList());
-    }
-
-    @Transactional
-    public void saveData(Map<String, Connection> localToRegionalCheapestConnections,
-                         Map<String, Connection> regionalToNationalClosestConnections,
-                         Map<String, Connection> nationalToSupplierClosestConnections,
-                         List<Road> roads) {
-        regionalToNationalClosestConnections.values().forEach(connectionRepository::save);
-        nationalToSupplierClosestConnections.values().forEach(connectionRepository::save);
-        localToRegionalCheapestConnections.values().forEach(connectionRepository::save);
-        roads.forEach(roadRepository::save);
-        System.out.println("Stored successfully!");
     }
 
     private void printSolution(Map<String, Connection> localToRegionalCheapestConnections,

@@ -1,0 +1,70 @@
+{% extends "layout/baseAdmin" %}
+{% import "elements/table" as table %}
+
+{% set pageTitle = entitiesName %}
+
+{% block headButtons %}
+    <div>
+        <form method="GET">
+            <button type="submit" class="btn btn-success" formaction="new"><i class="fas fa-plus"></i> Добавить</button>
+        </form>
+    </div>
+{% endblock %}
+
+{% block content %}
+    {{ table.table("table", "id", objs, fields) }}
+{% endblock %}
+
+
+{# --- JavaScript stuff --- #}
+
+{% block head %}
+    {{ parent() }}
+    <script src="/dist/tablefilter/tablefilter.js"></script>
+{% endblock %}
+
+{% block tail %}
+    {{ parent() }}
+    
+    <script type="text/javascript">
+        var tfConfig = {
+            base_path: '/dist/tablefilter/',
+            alternate_rows: true,
+            btn_reset: true,
+            status_bar: true,
+            paging: true,
+            popup_filters: true,
+            rows_counter: true,
+            //responsive: true,
+
+            rows_counter: {
+                text: 'Записей: '
+            },
+
+            col_{{fields|length}}: 'none',
+
+            mark_active_columns: {
+                highlight_column: true
+            },
+            highlight_keywords: true,
+            no_results_message: true,
+
+            extensions: [{
+                name: 'sort'
+            }],
+
+            /** Bootstrap integration */
+
+            // aligns filter at cell bottom when Bootstrap is enabled
+            filters_cell_tag: 'th',
+
+            // allows Bootstrap table styling
+            themes: [{
+                name: 'transparent'
+            }]
+        };
+
+        var tf = new TableFilter('table', tfConfig);
+        tf.init();
+    </script>
+{% endblock %}

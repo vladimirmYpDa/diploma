@@ -10,7 +10,6 @@ import org.springframework.core.io.Resource;
 @SpringBootApplication
 public class AppApplication {
     private static Resource location = new ClassPathResource("files/");
-
     public static void main(String[] args) {
         SpringApplication.run(AppApplication.class, args);
     }

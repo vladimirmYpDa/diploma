@@ -1,8 +1,8 @@
-{% extends "base" %}
+{% extends "layout/base" %}
 
 {% block head %}
     {{ parent() }}
-    <link href="../../static/css/admin.css" rel="stylesheet" type="text/css"/>
+    <link href="/css/admin.css" rel="stylesheet" type="text/css"/>
 {% endblock %}
 
 {% block title %}
@@ -10,12 +10,16 @@
 {% endblock %}
 
 {% block header %}
-    {% include "../elements/headerAdmin.html" %}
+    {% include "elements/headerAdmin" %}
 {% endblock %}
 
 {% block wrapper %}
-    <div id="pageTitle">
-        <h4>{{ pageTitle }}</h4>
+    <div id="pageHead" class="d-flex">
+        <div class="me-auto">
+            <h4>{{ pageTitle }}</h4>
+        </div>
+        {% block headButtons %} {% endblock %}
+        
     </div>
 
     <div id="alert">

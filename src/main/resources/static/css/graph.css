@@ -60,10 +60,12 @@ html {
     right: 7px;
 }*/
 
-html,
-body {
+html, body {
+    margin: 0;
     height: 100%;
+    overflow: hidden
 }
+
 
 body {
     display: flex;
@@ -92,20 +94,20 @@ body {
 }
 
 #sidebar {
-    min-width: 250px;
-    max-width: 250px;
+    min-width: 350px;
+    max-width: 350px;
     height: 100%;
     position: fixed;
     z-index: 999;
 }
 
 #sidebar.active {
-    margin-left: -250px;
+    margin-left: -350px;
 }
 
 @media (max-width: 768px) {
     #sidebar {
-        margin-left: -250px;
+        margin-left: -350px;
     }
     #sidebar.active {
         margin-left: 0;

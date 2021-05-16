@@ -15,4 +15,5 @@ public class ResultDto {
     private BigDecimal sumToNationalConnection;
     private List<RegionalToLocalDto> regionalToLocalDtos;
     private List<List<String>> roadsMatrix;
+    private String downloadFilename;
 }

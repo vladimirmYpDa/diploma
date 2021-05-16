@@ -7,25 +7,7 @@ function destroyNetwork() {
     }
 }
 
-function upload() {
-    var file = document.getElementById('fileInput').files[0];
-
-    const fd = new FormData(), ajax = new XMLHttpRequest();
-
-    fd.append('file', file, file.name);
-
-    ajax.open('POST', '/upload');
-    ajax.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-
-    ajax.onreadystatechange = () => {
-        let text = "Upload status: " + ajax.status;
-        console.log(text);
-    };
-
-    ajax.send(fd);
-}
-
-function drawNetwork() {
+function fetchNetwork() {
     const ajax = new XMLHttpRequest();
     var regionalWhAmount = document.getElementById('regionalWhAmount').value;
     ajax.open('GET', '/getResult?regionalWhAmount=' + regionalWhAmount);
@@ -40,8 +22,11 @@ function drawNetwork() {
         var container = document.getElementById('mynetwork');
         var parentRect = container.parentNode.getBoundingClientRect();
 
+        var downloadLink = document.getElementById('downloadLink');
+        downloadLink.setAttribute('href', '/' + response.downloadFilename)
+
         var options = {
-            autoResize: false,
+            autoResize: true,
             // width: parentRect.width + "px",
             // height: parentRect.height + "px"
             nodes: {
@@ -50,7 +35,7 @@ function drawNetwork() {
             edges: {
                 smooth: false
             },
-            physics: false,
+            physics: true,
             interaction: {
                 dragNodes: false,
                 zoomView: true,
@@ -66,12 +51,12 @@ function drawNetwork() {
         // });
 
         // ensure
-        window.addEventListener('resize', function(event) {
-            network.setOptions({
-                width: parentRect.width + "px",
-                height: parentRect.height + "px"
-            })
-        });
+        // window.addEventListener('resize', function(event) {
+        //     network.setOptions({
+        //         width: parentRect.width + "px",
+        //         height: parentRect.height + "px"
+        //     })
+        // });
     });
 
     ajax.send();
@@ -96,8 +81,14 @@ function buildNetwork(cities, roads) {
             nodes.add({
                 id: i,
                 label: String(city),
-                x: 0,
-                y: suppCount * 100
+                title: "Поставщик",
+                size: 24,
+                // x: 0,
+                // y: suppCount * 100,
+                color: '#FF9999',
+                font: {
+                    size: 16
+                }
             });
             suppCount++;
         }
@@ -105,8 +96,14 @@ function buildNetwork(cities, roads) {
             nodes.add({
                 id: i,
                 label: String(city),
-                x: 300,
-                y: natCount * 100
+                title: "Национальный узел",
+                size: 18,
+                // x: 300,
+                // y: natCount * 100,
+                color: '#FFFF99',
+                font: {
+                    size: 14
+                }
             });
             natCount++;
         }
@@ -114,8 +111,14 @@ function buildNetwork(cities, roads) {
             nodes.add({
                 id: i,
                 label: String(city),
-                x: 600,
-                y: regCount * 100
+                title: "Региональный узел",
+                size: 12,
+                // x: 600,
+                // y: regCount * 100,
+                color: '#99FF99',
+                font: {
+                    size: 12
+                }
             });
             regCount++;
         }
@@ -123,8 +126,14 @@ function buildNetwork(cities, roads) {
             nodes.add({
                 id: i,
                 label: String(city),
-                x: 900,
-                y: locCount * 100
+                title: "Локальный узел",
+                size: 6,
+                // x: 900,
+                // y: locCount * 100,
+                color: '#9999FF',
+                font: {
+                    size: 10
+                }
             });
             locCount++;
         }
