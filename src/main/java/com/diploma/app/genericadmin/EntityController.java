@@ -8,6 +8,7 @@ import org.springframework.ui.ModelMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.validation.Valid;
 import javax.validation.constraints.*;
@@ -18,8 +19,23 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public abstract class EntityController<EntityType extends IEntity<Long>> {
+
+    /**
+     * Supplementary set of classes used to check if field is numeric.
+     */
+    private static final Set<Class<?>> primitiveNumbers = Stream
+            .of(int.class, long.class, float.class, double.class, byte.class, short.class)
+            .collect(Collectors.toSet());
+
+    /**
+     * Contains data describing fields of a particular entity's admin interface.
+     */
     protected final LinkedHashMap<Field, FieldParameters> fields = new LinkedHashMap<>();
 
+    /**
+     * Workaround: generic type class field because Java
+     * doesn't allow to reference generic type in the code.
+     */
     protected final Class<EntityType> genericType;
 
     @Autowired
@@ -42,10 +58,6 @@ public abstract class EntityController<EntityType extends IEntity<Long>> {
                 });
     }
 
-    private static final Set<Class<?>> primitiveNumbers = Stream
-            .of(int.class, long.class, float.class, double.class, byte.class, short.class)
-            .collect(Collectors.toSet());
-
     public boolean isNumeric(Field field) {
         Class<?> c = field.getType();
         if (c.isPrimitive())
@@ -60,7 +72,6 @@ public abstract class EntityController<EntityType extends IEntity<Long>> {
      * @param field Class field to get type for
      * @return Template input type
      */
-    // TODO: write complete method
     public String getTemplateInputType(Field field) {
         Class<?> c = field.getType();
 
@@ -152,7 +163,6 @@ public abstract class EntityController<EntityType extends IEntity<Long>> {
         dataBinder.setDisallowedFields("id");
     }
 
-
     @GetMapping
     public String displayList(ModelMap model) {
         setGenericInfo(model);
@@ -173,13 +183,16 @@ public abstract class EntityController<EntityType extends IEntity<Long>> {
     }
 
     @PostMapping("new")
-    public String processCreate(ModelMap model, @ModelAttribute("obj") @Valid EntityType obj, BindingResult result) {
+    public String processCreate(ModelMap model, @ModelAttribute("obj") @Valid EntityType obj,
+                                BindingResult result, RedirectAttributes redirectAttributes)
+    {
         if (result.hasErrors()) {
             setGenericInfo(model);
             model.put("newObj", true);
             return "admin/update";
         } else {
             entityRepository.save(obj);
+            redirectAttributes.addFlashAttribute("successMessage", "Запись успешно создана!");
             return "redirect:.";
         }
     }
@@ -199,7 +212,8 @@ public abstract class EntityController<EntityType extends IEntity<Long>> {
 
     @PostMapping("update")
     public String processUpdate(@RequestParam(value = "id") Long id, ModelMap model,
-                                @ModelAttribute("obj") @Valid EntityType obj, BindingResult result)
+                                @ModelAttribute("obj") @Valid EntityType obj, BindingResult result,
+                                RedirectAttributes redirectAttributes)
     {
         if (result.hasErrors()) {
             setGenericInfo(model);
@@ -208,13 +222,20 @@ public abstract class EntityController<EntityType extends IEntity<Long>> {
         } else {
             obj.setId(id);
             entityRepository.save(obj);
+            redirectAttributes.addFlashAttribute("successMessage", "Запись успешно обновлена!");
             return "redirect:.";
         }
     }
 
     @PostMapping("delete")
-    public String processDelete(@RequestParam(value = "id") Long id) {
-        entityRepository.deleteById(id);
+    public String processDelete(@RequestParam(value = "id") Long id, RedirectAttributes redirectAttributes) {
+        try {
+            entityRepository.deleteById(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Запись успешно удалена!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("warningMessage", "Ошибка: " + e.getLocalizedMessage());
+        }
+
         return "redirect:.";
     }
 

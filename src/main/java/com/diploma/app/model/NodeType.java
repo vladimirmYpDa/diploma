@@ -3,8 +3,8 @@ package com.diploma.app.model;
 public enum NodeType {
 
     LOCAL("Локальный"),
-    REGIONAL("Национальный"),
-    NATIONAL("Региональный"),
+    REGIONAL("Региональный"),
+    NATIONAL("Национальный"),
     SUPPLIER("Поставщик");
 
     private final String displayName;

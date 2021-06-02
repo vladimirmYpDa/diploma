@@ -10,20 +10,19 @@ function destroyNetwork() {
 function fetchNetwork() {
     const ajax = new XMLHttpRequest();
     var regionalWhAmount = document.getElementById('regionalWhAmount').value;
-    ajax.open('GET', '/getResult?regionalWhAmount=' + regionalWhAmount);
+    var transportPrice = document.getElementById('transportPrice').value;
+    ajax.open('GET', '/getResult?regionalWhAmount=' + regionalWhAmount + '&transportPrice=' + transportPrice);
     ajax.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
     ajax.addEventListener("readystatechange", () => {
         let text = ajax.responseText;
         const response = JSON.parse(text);
         destroyNetwork();
-        var data = buildNetwork(response.citiesRoadsDto.cities, response.citiesRoadsDto.roads);
+        modifyDom(response);
+        var data = buildNetwork(response.roads);
 
         var container = document.getElementById('mynetwork');
         var parentRect = container.parentNode.getBoundingClientRect();
-
-        var downloadLink = document.getElementById('downloadLink');
-        downloadLink.setAttribute('href', '/' + response.downloadFilename)
 
         var options = {
             autoResize: true,
@@ -35,7 +34,18 @@ function fetchNetwork() {
             edges: {
                 smooth: false
             },
-            physics: true,
+            physics: {
+                enabled: true,
+                minVelocity: 1,
+                stabilization: {
+                    enabled: true,
+                    iterations: 1000
+                }
+            },
+            layout: {
+                randomSeed: 1,
+                improvedLayout: false
+            },
             interaction: {
                 dragNodes: false,
                 zoomView: true,
@@ -44,7 +54,7 @@ function fetchNetwork() {
         };
 
         network = new vis.Network(container, data, options);
-
+        network.on("stabilizationIterationsDone", function() { network.stopSimulation()})
         // // add event listeners
         // network.on('select', function (params) {
         //     document.getElementById('selection').innerHTML = 'Selection: ' + params.nodes;
@@ -62,109 +72,109 @@ function fetchNetwork() {
     ajax.send();
 }
 
-function buildNetwork(cities, roads) {
-    var nodes = new vis.DataSet();
+function modifyDom(result) {
+    const regionalTable = document.getElementById("regionalTable");
+    const downloadLink = document.getElementById('downloadLink');
+    const sum = document.getElementById("sum");
+    const sumToNat = document.getElementById("sumToNat");
+    const sumToReg = document.getElementById("sumToReg");
+
+    downloadLink.setAttribute('href', '/' + result.downloadFilename);
+
+    sum.setAttribute("value", result.sumConnection);
+    sumToNat.setAttribute("value", result.sumToNationalConnection);
+    sumToReg.setAttribute("value", result.sumToRegionalConnection);
+
+    regionalTable
+    let newTable = document.createElement('div');
+    newTable.id = "regionalTable";
+
+    regionalTable.parentNode.replaceChild(newTable, regionalTable);
+    let rt = document.createElement('table');
+    rt.setAttribute("class", "table")
+    newTable.appendChild(rt);
+
+    let headerRow = rt.createTHead().insertRow();
+    headerRow.insertCell(0).innerHTML = "Рег. узел";
+    headerRow.insertCell(1).innerHTML = "Трансп. затр.";
+    
+    for (const [key, value] of Object.entries(result.regionalSums)) {
+        let row = rt.insertRow();
+        row.insertCell(0).innerHTML = key;
+        row.insertCell(1).innerHTML = value;
+    }
+}
+
+function parseNode(node) {
+    var displayTooltip, size, fontSize, color;
+    switch (node.nodeType) {
+        case 'SUPPLIER':
+            size = 24;
+            fontSize = 16;
+            color = '#FF9999';
+            break;
+        case 'NATIONAL':
+            size = 18;
+            fontSize = 14;
+            color = '#FFFF99';
+            displayTooltip = 'Национальный узел';
+            break;
+        case 'REGIONAL':
+            size = 12;
+            fontSize = 12;
+            color = '#99FF99';
+            displayTooltip = 'Региональный узел';
+            break;
+        case 'LOCAL':
+            size = 6;
+            fontSize = 10;
+            color = '#99FFFF';
+            displayTooltip = 'Узел поставщика\nСпрос:' + node.demand;
+            break;
+    }
+
+    return {
+        id: node.id,
+        label: node.name,
+        title: displayTooltip,
+        size: size,
+        color: color,
+        font: {
+            size: fontSize
+        }
+    };
+}
+
+function buildNetwork(roads) {
+    var netNodes = new vis.DataSet();
     var edges = [];
-    var connectionCount = [];
-    var citiesMap = new Map();
+    var nodes = new Map();
 
-    var i = 0;
-    var suppCount = 0;
-    var natCount = 0;
-    var regCount = 0;
-    var locCount = 0;
-
-    for (var city in cities) {
-        var type = cities[city];
-
-        if (type === 'SUPPLIER') {
-            nodes.add({
-                id: i,
-                label: String(city),
-                title: "Поставщик",
-                size: 24,
-                // x: 0,
-                // y: suppCount * 100,
-                color: '#FF9999',
-                font: {
-                    size: 16
-                }
-            });
-            suppCount++;
-        }
-        if (type === 'NATIONAL') {
-            nodes.add({
-                id: i,
-                label: String(city),
-                title: "Национальный узел",
-                size: 18,
-                // x: 300,
-                // y: natCount * 100,
-                color: '#FFFF99',
-                font: {
-                    size: 14
-                }
-            });
-            natCount++;
-        }
-        if (type === 'REGIONAL') {
-            nodes.add({
-                id: i,
-                label: String(city),
-                title: "Региональный узел",
-                size: 12,
-                // x: 600,
-                // y: regCount * 100,
-                color: '#99FF99',
-                font: {
-                    size: 12
-                }
-            });
-            regCount++;
-        }
-        if (type === 'LOCAL') {
-            nodes.add({
-                id: i,
-                label: String(city),
-                title: "Локальный узел",
-                size: 6,
-                // x: 900,
-                // y: locCount * 100,
-                color: '#9999FF',
-                font: {
-                    size: 10
-                }
-            });
-            locCount++;
-        }
-        citiesMap[city] = i++;
+    function storeNode(node) {
+        nodes[node.id] = node;
+        netNodes.update(parseNode(node));
+        return nodes[node.id];
     }
 
-    function push(from, to) {
+    function storeConnection(conn) {
+        storeNode(conn.sourceNode);
+        storeNode(conn.destinationNode);
+
         edges.push({
-            from: from,
-            to: to
+            from: conn.sourceNode.id,
+            to: conn.destinationNode.id,
+            length: (conn.distance / 2) + 10,
+            title: conn.distance + " км"
         });
-        connectionCount[to]++;
-        connectionCount[from]++;
     }
 
-    for (var k = 0; k < roads.length; k++) {
-        let road = roads[k];
-        var localCity = road.localToRegionalConn.destinationNode.name;
-        var regionalCity = road.localToRegionalConn.sourceNode.name;
-        var nationalCity = road.regionalToNationalConn.sourceNode.name;
-        var supplierCity = road.nationalToSupplierConn.sourceNode.name;
+    for (var roadId in roads) {
+        let road = roads[roadId];
 
-        let regionalId = citiesMap[regionalCity];
-        let localId = citiesMap[localCity];
-        let nationalId = citiesMap[nationalCity];
-        let supplierId = citiesMap[supplierCity];
-
-        push(supplierId, nationalId);
-        push(nationalId, regionalId);
-        push(regionalId, localId);
+        storeConnection(road.localToRegionalConn);
+        storeConnection(road.regionalToNationalConn);
+        storeConnection(road.nationalToSupplierConn);
     }
 
-    return {nodes: nodes, edges: edges};
+    return {nodes: netNodes, edges: edges};
 }

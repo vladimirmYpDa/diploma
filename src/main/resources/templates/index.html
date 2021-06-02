@@ -25,5 +25,7 @@
         document.getElementById("sidebarCollapse").addEventListener("click", function () {
             document.getElementById("sidebar").classList.toggle("active");
         });
+
+        document.addEventListener("DOMContentLoaded", fetchNetwork);
     </script>
 {% endblock %}
