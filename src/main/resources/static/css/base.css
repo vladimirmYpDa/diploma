@@ -1,0 +1,19 @@
+/*.btn-primary, .btn-secondary, .btn-success, .btn-danger
+.btn-warning, .btn-info, .btn-light, .btn-dark {
+
+}*/
+
+.btn {
+    padding: .25rem .5rem;
+    margin: 2px;
+}
+
+.form-group > label {
+  font-size: small;
+  padding-left: 5px;
+  padding-right: 5px;
+  position: relative;
+  top: 10px;
+  left: 10px;
+  background-color: white;
+}

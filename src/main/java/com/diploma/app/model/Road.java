@@ -1,17 +1,19 @@
 package com.diploma.app.model;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
-import java.util.List;
 
 @Entity
 @Table(name = "road")
 @Getter
 @Setter
+@NoArgsConstructor
 public class Road {
 
     @Id
@@ -22,14 +24,17 @@ public class Road {
     private BigDecimal totalDistance;
 
     @ManyToOne
+    @NotNull
     @JoinColumn(name = "local_to_regional_conn")
     private Connection localToRegionalConn;
 
     @ManyToOne
+    @NotNull
     @JoinColumn(name = "regional_to_national_conn")
     private Connection regionalToNationalConn;
 
     @ManyToOne
+    @NotNull
     @JoinColumn(name = "national_to_supplier_conn")
     private Connection nationalToSupplierConn;
 

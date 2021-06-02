@@ -1,0 +1,40 @@
+{% macro tableButtons(i) %}
+<form method="GET">
+    <input type="hidden" name="id" value="{{ i }}">
+    <button type="submit" class="btn btn-primary" formaction="update"><i class="fas fa-edit"></i></button>
+    <button type="submit" class="btn btn-danger" formaction="delete" formmethod="post" onclick="return confirm('Удалить данную запись?')"><i class="fas fa-trash"></i></button>
+</form>
+{% endmacro %}
+
+{% macro tableRow(i, obj, columns) %}
+<tr>
+    {% for column in columns %}
+        <td>{{ obj[column.value.fieldName] }}</td>
+    {% endfor %}
+    <td>{{ tableButtons(i) }}</td>
+</tr>
+{% endmacro %}
+
+{% macro tableHeader(columns) %}
+<thead>
+<tr>
+    {% for column in columns %}
+        <th>{{ column.value.displayName }}</th>
+    {% endfor %}
+    <th>
+        Действие
+    </th>
+</tr>
+</thead>
+{% endmacro %}
+
+{% macro table(id, indexName, objs, columns) %}
+<table class="table" id="{{id}}">
+    {{ tableHeader(columns) }}
+    <tbody>
+        {% for obj in objs %}
+            {{ tableRow(obj[indexName], obj, columns) }}
+        {% endfor %}
+    </tbody>
+</table>
+{% endmacro %}

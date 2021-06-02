@@ -1,0 +1,21 @@
+{% extends "layout/baseAdmin" %}
+{% import "elements/input" as input %}
+
+{{ entitiesName }}
+{% set pageTitle = newObj ? "Добавить запись | #{entitiesName}" : "Изменить запись | #{entitiesName}" %}
+
+{% block content %}
+
+    {{ input.form("obj", "post", fields, obj, _context) }}
+    
+{% endblock %}
+
+{% block alert %}
+
+    {% if hasGlobalErrors("obj") %}
+        {% for err in getGlobalErrors('formName') %}
+            <div class="alert alert-danger" role="alert">{{ err }}</div>
+        {% endfor %}
+    {% endif %}
+
+{% endblock %}

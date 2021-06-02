@@ -1,0 +1,26 @@
+<nav class="navbar navbar-expand-md navbar-light bg-light">
+    <div class="container-fluid">
+        <button type="button" id="sidebarCollapse" class="btn btn-info">
+            <i class="fas fa-align-left"></i>
+            <span>Расчёт</span>
+        </button>
+
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <button class="btn btn-success" onclick="fetchNetwork()"><i class="fas fa-sync-alt"></i> Обновить</button>
+                </li>
+            </ul>
+
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="btn btn-outline-primary" href="/admin/" role="button">Управление</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

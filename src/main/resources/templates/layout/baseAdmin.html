@@ -1,0 +1,44 @@
+{% extends "layout/base" %}
+
+{% block head %}
+    {{ parent() }}
+    <link href="/css/admin.css" rel="stylesheet" type="text/css"/>
+{% endblock %}
+
+{% block title %}
+    {{ pageTitle }} | {{ parent() }}
+{% endblock %}
+
+{% block header %}
+    {% include "elements/headerAdmin" %}
+{% endblock %}
+
+{% block wrapper %}
+    <div id="pageHead" class="d-flex">
+        <div class="me-auto">
+            <h4>{{ pageTitle }}</h4>
+        </div>
+        {% block headButtons %} {% endblock %}
+        
+    </div>
+
+    <div id="alert">
+        {% block alert %}
+            {% if warningMessage is not empty %}
+                <div class="alert alert-warning" role="alert">
+                    {{ warningMessage }}
+                </div>
+            {% endif %}
+            {% if successMessage is not empty %}
+                <div class="alert alert-success" role="alert">
+                    {{ successMessage }}
+                </div>
+            {% endif %}
+        {% endblock %}
+    </div>
+
+    <div id="content">
+        {% block content %} {% endblock %}
+    </div>
+{% endblock %}
+

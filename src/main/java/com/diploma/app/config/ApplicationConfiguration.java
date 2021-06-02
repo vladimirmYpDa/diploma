@@ -12,4 +12,5 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @PropertySource("classpath:application.properties")
 @ComponentScan(basePackages = {"com.diploma.app"})
 public class ApplicationConfiguration {
+
 }

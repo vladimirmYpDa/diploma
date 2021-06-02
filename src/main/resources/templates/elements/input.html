@@ -1,0 +1,75 @@
+{% macro inputField(formName, label, inputName, type, inputValue, required, constraint = none, _context) %}
+
+	{% set valid = not hasFieldErrors(formName, inputName) %}
+
+	<div class="form-group">
+		<label for="{{ inputName }}">{{ label }}</label>
+
+		<div>
+			{# Special treatment for list types #}
+			{% if type == "select" %}
+				<select
+					class="form-select {{ valid ? '': 'is-invalid'}}"
+					id="{{ inputName }}"
+					name="{{ inputName }}"
+					{{ required ? "required" : '' }}
+					aria-describedby="{{ inputName  }}Feedback"
+				>
+
+					{% for value in constraint.values %}
+						<option value="{{ value.id }}" {{ value == inputValue ? 'selected' : '' }}>{{ value }}</option>
+					{% endfor %}
+
+				</select>
+
+			{# Rest of types #}
+			{% else %}
+				<input
+					class="form-control {{ valid ? '': 'is-invalid'}}"
+					type="{{ type }}"
+					id="{{ inputName }}"
+					name="{{ inputName }}"
+					value="{{ inputValue }}"
+					{# Numeric/date types input #}
+					{% if type == "number" and constraint is not empty %}
+						min="{{constraint.min}}"
+						max="{{constraint.max}}"
+					{% endif %}
+					{{ required ? "required" : '' }}
+				/>
+
+			{% endif %}
+		</div>
+
+		{% if not valid %}
+			<div
+				id="{{ inputName }}Feedback"
+				class="d-block invalid-feedback"
+			>
+				<ul>
+					{% for err in getFieldErrors(formName, inputName) %}
+						<li>{{ err }}</li>
+					{% endfor %}
+				</ul>
+			</div>
+		{% endif %}
+	</div>
+	
+{% endmacro %}
+
+{% macro form(formName, formMethod, fieldMap, obj, _context) %}
+	<form method="{{ formMethod }}">
+		<div class="form-group has-feedback">
+			{% for field in fieldMap %}
+				{{ inputField(formName, field.value.displayName, field.value.fieldName, field.value.type, obj[field.value.fieldName], field.value.required, field.value.constraint, _context) }}
+			{% endfor %}
+		</div>
+		<hr/>
+		<div class="form-group">
+			<div>
+				<button type="submit" class="btn btn-success"><i class="fas fa-check"></i> Отправить</button>
+				<button onclick="history.back(); return false;" class="btn btn-outline-primary"><i class="fas fa-times"></i> Отмена</button>
+			</div>
+		</div>
+	</form>
+{% endmacro %}

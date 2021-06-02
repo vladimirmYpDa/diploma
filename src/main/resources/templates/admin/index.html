@@ -1,0 +1,32 @@
+{% extends "layout/baseAdmin" %}
+
+{% set pageTitle = "Админпанель" %}
+
+{% block content %}
+    <label for="fileInput">Импорт данных из Excel</label>
+    <input type="file" id="fileInput" onchange="upload()" name="file-upload">
+{% endblock %}
+
+{% block tail %}
+    {{ parent() }}
+    
+    <script type="text/javascript">
+        function upload() {
+            var file = document.getElementById('fileInput').files[0];
+
+            const fd = new FormData(), ajax = new XMLHttpRequest();
+
+            fd.append('file', file, file.name);
+
+            ajax.open('POST', 'upload');
+            ajax.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+            ajax.onreadystatechange = () => {
+                let text = "Upload status: " + ajax.status;
+                console.log(text);
+            };
+
+            ajax.send(fd);
+        }
+    </script>
+{% endblock %}
